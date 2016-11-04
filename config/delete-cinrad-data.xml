@@ -1,0 +1,55 @@
+<project>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>delete-cinrad</artifactId>
+	<groupId>mq.task</groupId>
+	<version>2.0</version>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<configuration>
+					<target>
+						<tstamp>
+							<format property="week.pass" offset="-48" unit="hour"
+								pattern="yyyy-MM-dd HH:mm" locale="en,UK" />
+						</tstamp>
+						<echo>${week.pass}</echo>
+
+						<!-- Delete old cinrad file -->
+						<parallel threadCount="1" timeout="3000000">
+							<sequential>
+								<sql driver="org.postgresql.Driver" url="jdbc:postgresql://10.151.64.45:5432/cinrad"
+									userid="sta828" password="123456">
+							<![CDATA[
+							DELETE FROM radar_48 WHERE scale_time BETWEEN '2000-10-01 00:00' AND '${week.pass}';
+							DELETE FROM radar_58 WHERE scale_time BETWEEN '2000-10-01 00:00' AND '${week.pass}';
+                            DELETE FROM radar_60 WHERE scale_time BETWEEN '2000-10-01 00:00' AND '${week.pass}';
+							DELETE FROM radial_index WHERE scale_time BETWEEN '2000-10-01 00:00' AND '${week.pass}';
+                           ]]>
+								</sql>
+							</sequential>
+						</parallel>
+					</target>
+				</configuration>
+				<dependencies>
+					<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+					<dependency>
+						<groupId>org.postgresql</groupId>
+						<artifactId>postgresql</artifactId>
+						<version>9.4.1211.jre7</version>
+					</dependency>
+
+					<!-- https://mvnrepository.com/artifact/org.apache.ant/ant -->
+					<dependency>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant</artifactId>
+						<version>1.9.7</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+</project>

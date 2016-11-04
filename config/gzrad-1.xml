@@ -1,0 +1,184 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>com.fs121.download</artifactId>
+    <groupId>gz-radar</groupId>
+    <version>1.0</version>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <configuration>
+                    <target>
+                        <property name="gzrad.dir" location="/home/sta828/cron/gzrad/data" />
+               
+                        <property name="gzrad.bin.dir" location="/home/www/html/data/RADA_BCGZ/DOR/Z9200" />
+                    
+						<taskdef name="mqtstamp" classname="com.fs121.ant.copy.MQTstamp"/>
+                        
+                        <mqtstamp>
+                            <format property="8.hour.ago" offset="-8" unit="hour" pattern="yyyyMMddHHmm" locale="en,UK" mqoffset="1" mod="6" />
+                        </mqtstamp>
+                        <!--
+						<mqtstamp>
+                            <format property="8.hour.ago.2" offset="-8" unit="hour" pattern="yyyyMMddHHmm" locale="en,UK" mqoffset="1" mod="6" />
+                        </mqtstamp>
+						<mqtstamp>
+                            <format property="8.hour.ago.3" offset="-8" unit="hour" pattern="yyyyMMddHHmm" locale="en,UK" mqoffset="2" mod="6" />
+                        </mqtstamp>
+                        <echo message="${8.hour.ago.2}"/>
+						<echo message="${8.hour.ago.3}"/>
+                    -->
+						
+                        <echo message="${8.hour.ago}"/>
+						
+						
+						<parallel threadCount="1" timeout="180000">
+						
+						<!--  R19  -->
+	                    <exec executable="ncftpget">
+                            <arg line="-u gmcrfs -p fos123 10.148.8.212 ${gzrad.dir}  
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_10_230_5.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_10_230_5.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_10_230_15.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_10_230_15.200.bin 
+
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_10_230_24.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_10_230_24.200.bin 
+
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_20_460_5.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_20_460_5.200.bin 
+							 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_20_460_15.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_20_460_15.200.bin  
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_R_20_460_24.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_R_20_460_24.200.bin 
+
+					        /bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_5_115_5.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_5_115_5.200.bin 
+
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_5_115_15.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_5_115_15.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_5_115_24.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_5_115_24.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_10_230_5.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_10_230_5.200.bin 
+
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_10_230_15.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_10_230_15.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_V_10_230_24.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_V_10_230_24.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_OHP_20_230_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_OHP_20_230_NUL.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_STP_20_230_NUL.200.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_STP_20_230_NUL.200.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_THP_20_230_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_THP_20_230_NUL.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_CAR_10_230_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_CAR_10_230_NUL.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_CR_10X10_230_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_CR_10X10_230_NUL.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_CR_40X40_460_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_CR_40X40_460_NUL.200.bin 
+							
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_ET_40X40_230_NUL.200.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_ET_40X40_230_NUL.200.200.bin 
+								
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_VIL_40X40_230_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_VIL_40X40_230_NUL.200.bin 
+								
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}00_P_DOR_SA_VWP_20_NUL_NUL.200.bin 
+							/bcgzup/rada/p_dor/Z_RADR_I_Z9200_${8.hour.ago}01_P_DOR_SA_VWP_20_NUL_NUL.200.bin
+
+                            /bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_HCL_01_164 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_HCL_01_164
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_HCL_02_164 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_HCL_02_164
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_HCL_03_164 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_HCL_03_164
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_ML_01_166 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_ML_01_166
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_ML_02_166 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_ML_02_166
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_ML_03_166 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_ML_03_166
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_01_158 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_01_158
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_02_158 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_02_158
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_03_158 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_03_158
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_01_160 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_01_160
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_02_160 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_02_160
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_03_160 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_03_160
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_01_162 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_01_162
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_02_162 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_02_162
+
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}00Z_PPI_03_162 
+							/bcgzup/rada/p_dor/Z9200_${8.hour.ago}01Z_PPI_03_162 " />
+                        </exec>
+				 
+                      </parallel>
+                      
+						<echo message="start copy"/>
+						<!--
+						<copy todir="${gzrad.bin.dir}">
+                           <fileset dir="${gzrad.dir}" includes="**" />
+                        </copy> 
+                        -->
+                        <copy todir="${gzrad.bin.dir}">
+                           <fileset dir="${gzrad.dir}" includes="**">
+							 <custom classname="com.fs121.ant.copy.CopyFileFilter">
+									<param name="infDir" value="/home/sta828/cron/gzrad/inf" />
+							 </custom>
+                           </fileset>
+                        </copy>
+                    </target>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                        <version>1.9.7</version>
+                    </dependency>
+					
+					<dependency>
+                        <groupId>com.fs121.ant</groupId>
+                        <artifactId>copy-task</artifactId>
+                        <version>1.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>
