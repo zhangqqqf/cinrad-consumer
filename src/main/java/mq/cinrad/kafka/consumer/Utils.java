@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import mq.radar.cinrad.MQFilter;
-import mq.radar.cinrad.decoders.cinrad.CindarDecoder;
-import mq.radar.cinrad.decoders.cinrad.DecodeStreamingRadial;
 
 public class Utils {
 
@@ -46,7 +44,7 @@ public class Utils {
 		return decodeHintMap.get(pcode);
 	}
 
-	private static Map<String, Object> getRDecodeHint() {
+	public static Map<String, Object> getRDecodeHint() {
 
 		Map<String, Object> decodeHint = new HashMap<>();
 

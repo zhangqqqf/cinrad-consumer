@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.config.ContainerProperties;
@@ -28,17 +29,31 @@ import org.springframework.kafka.listener.config.ContainerProperties;
 import com.google.common.collect.Queues;
 
 @SpringBootApplication
+@ComponentScan
 public class ConsumerApplication implements CommandLineRunner {
 
 	private static final Logger logger = LoggerFactory.getLogger(ConsumerApplication.class);
 
 	private KafkaMessageListenerContainer<String, String> listenerContainer;
 
+	@Autowired
 	private DataSource cinradDataSource;
 
-	@Autowired
-	public ConsumerApplication(DataSource cinradDataSource) {
+	public ConsumerApplication() {
 
+	}
+
+	public ConsumerApplication(DataSource cinradDataSource, Map<String, Object> rDecodeHint) {
+
+		this.cinradDataSource = cinradDataSource;
+
+	}
+
+	public DataSource getCinradDataSource() {
+		return cinradDataSource;
+	}
+
+	public void setCinradDataSource(DataSource cinradDataSource) {
 		this.cinradDataSource = cinradDataSource;
 	}
 
@@ -89,14 +104,14 @@ public class ConsumerApplication implements CommandLineRunner {
 				listenerContainer.setupMessageListener(listener);
 
 				ExecutorService service = Executors.newFixedThreadPool(2);
-				CinradConsumer consumer1 = new CinradConsumer(recordQueue,cinradDataSource);
-				CinradConsumer consumer2 = new CinradConsumer(recordQueue,cinradDataSource);
+				CinradConsumer consumer1 = new CinradConsumer(recordQueue, cinradDataSource);
+				CinradConsumer consumer2 = new CinradConsumer(recordQueue, cinradDataSource);
 				service.submit(consumer1);
 				service.submit(consumer2);
 
 				listenerContainer.start();
-				
-				//logger.error(cinradDataSource.toString());
+
+				// logger.error(cinradDataSource.toString());
 
 			}
 
