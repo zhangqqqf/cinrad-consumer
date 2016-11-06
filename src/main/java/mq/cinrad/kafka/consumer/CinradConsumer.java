@@ -42,18 +42,14 @@ public class CinradConsumer implements Runnable {
 
 	private GeometryFactory geoFactory = new GeometryFactory(new PrecisionModel(100000), 4326);
 
-	private Connection connection = null;
-
 	final int batchSize = 20;
 
 	private DataSource cinradDataSource;
-	
-	
 
 	public CinradConsumer(BlockingQueue<ConsumerRecord<String, String>> recordQueue, DataSource dataSource) {
 		this.recordQueue = recordQueue;
 		this.cinradDataSource = dataSource;
-		
+
 	}
 
 	@Override
@@ -64,7 +60,7 @@ public class CinradConsumer implements Runnable {
 			try {
 				ConsumerRecord<String, String> record = recordQueue.take();
 				if (record.key().endsWith(".bin") && !record.key().contains("Z_R_DWRN_SRSI")) {
-					//processRecord(record);
+					// processRecord(record);
 					processRecord(record);
 				}
 			} catch (InterruptedException e) {
@@ -75,11 +71,12 @@ public class CinradConsumer implements Runnable {
 		}
 
 	}
+
 	@SuppressWarnings("unused")
 	private void processRecord2(ConsumerRecord<String, String> data) {
 		System.out.println("hello world");
 		System.out.println(cinradDataSource);
-		
+
 	}
 
 	private void processRecord(ConsumerRecord<String, String> data) {
@@ -87,6 +84,7 @@ public class CinradConsumer implements Runnable {
 		logger.info("Process Record ,Topic:{} ,Key:{} ,Value:{}", data.topic(), data.key(), data.value());
 
 		Cinrad cinrad = null;
+		Connection connection = null;
 		try {
 			connection = this.cinradDataSource.getConnection();
 			cinrad = new Cinrad(new URL(data.value()));
@@ -102,7 +100,7 @@ public class CinradConsumer implements Runnable {
 			case 38:
 				cinrad.setDecodeHint(Utils.getRDecodeHint());
 				cinrad.decodeData();
-				storeRadial(cinrad);
+				storeRadial(cinrad, connection);
 				break;
 			case 26:
 			case 27:
@@ -113,7 +111,7 @@ public class CinradConsumer implements Runnable {
 			case 79:
 			case 80:
 				cinrad.decodeData();
-				storeRadial(cinrad);
+				storeRadial(cinrad, connection);
 				break;
 			// case 53:
 			// case 110:
@@ -151,7 +149,7 @@ public class CinradConsumer implements Runnable {
 
 		finally {
 			if (null != cinrad) {
-				cinrad.getHeader().close();
+				cinrad.close();
 				cinrad = null;
 			}
 			if (null != connection) {
@@ -174,127 +172,128 @@ public class CinradConsumer implements Runnable {
 
 	}
 
-	private void storeRadial(Cinrad cinrad) {
+	private void storeRadial(Cinrad cinrad, Connection connection) {
 
-		//if (null != cinrad.getDecoder().getFeatures() && cinrad.getDecoder().getFeatures().size() > 0) {
+		// if (null != cinrad.getDecoder().getFeatures() &&
+		// cinrad.getDecoder().getFeatures().size() > 0) {
 
-			Date date = DateUtils.truncate(cinrad.getHeader().getScanCalendar().getTime(), Calendar.MINUTE);
+		Date date = DateUtils.truncate(cinrad.getHeader().getScanCalendar().getTime(), Calendar.MINUTE);
 
-			java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
+		java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
 
-			long id = -1;
+		long id = -1;
 
-			// String sql =
-			// "INSERT INTO radial_index(id, sid, pcode, elev, scale_time)
-			// VALUES
-			// (radial_index_id_seq.nextval , ?, ?, ?, ?)";
+		// String sql =
+		// "INSERT INTO radial_index(id, sid, pcode, elev, scale_time)
+		// VALUES
+		// (radial_index_id_seq.nextval , ?, ?, ?, ?)";
 
+		PreparedStatement psIndex = null;
+
+		PreparedStatement psItem = null;
+
+		PreparedStatement psUpdate = null;
+
+		SimpleFeatureIterator iterator = cinrad.getDecoder().getFeatures().features();
+
+		try {
 			String sql = "INSERT INTO radial_index( sid, pcode, elev, scale_time) VALUES ( ?, ?, ?, ?)";
+			psIndex = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			psIndex.setString(1, cinrad.getHeader().getRadarStationID().toString());
+			psIndex.setInt(2, cinrad.getHeader().getProductCode());
+			psIndex.setShort(3, cinrad.getHeader().getElevNumber());
+			psIndex.setTimestamp(4, sqlDate);
 
-			PreparedStatement psIndex = null;
+			// ps.executeUpdate(sql);
+			psIndex.execute();
+			connection.commit();
 
-			PreparedStatement psItem = null;
+			ResultSet rs = psIndex.getGeneratedKeys();
 
-			PreparedStatement psUpdate = null;
+			if (rs.next()) {
 
-			try {
-				psIndex = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-				psIndex.setString(1, cinrad.getHeader().getRadarStationID().toString());
-				psIndex.setInt(2, cinrad.getHeader().getProductCode());
-				psIndex.setShort(3, cinrad.getHeader().getElevNumber());
-				psIndex.setTimestamp(4, sqlDate);
+				id = rs.getLong(1);
+			}
 
-				// ps.executeUpdate(sql);
-				psIndex.execute();
+			logger.info("radial_index_id:" + id);
+			logger.info(sqlDate.toString());
+			if (id != -1) {
+
+				// String sql2 = "INSERT INTO radial_"
+				// + cinrad.getHeader().getProductCode()
+				// + "(gid, radial_id, color, the_geom)VALUES (radial_"
+				// + cinrad.getHeader().getProductCode()
+				// + "_gid_seq.nextval, ?, ?, ?)";
+
+				String sql2 = "INSERT INTO radial_" + cinrad.getHeader().getProductCode()
+						+ "(radial_id, color, the_geom)VALUES ( ?, ?, ?)";
+
+				psItem = connection.prepareStatement(sql2);
+				while (iterator.hasNext()) {
+					SimpleFeature f = iterator.next();
+
+					if (f.getDefaultGeometry() instanceof Polygon) {
+						psItem.setLong(1, id);
+						psItem.setInt(2, (Integer) f.getAttribute("colorIndex"));
+						Polygon[] pa = { (Polygon) f.getDefaultGeometry() };
+						// MultiPolygon multiPolygon=new MultiPolygon(pa,
+						// geoFactory);
+						psItem.setObject(3, new JtsGeometry(new MultiPolygon(pa, geoFactory)));
+						psItem.addBatch();
+
+					} else if (f.getDefaultGeometry() instanceof MultiPolygon) {
+
+						psItem.setLong(1, id);
+						psItem.setInt(2, (Integer) f.getAttribute("colorIndex"));
+						psItem.setObject(3, new JtsGeometry((MultiPolygon) f.getDefaultGeometry()));
+						psItem.addBatch();
+
+					}
+
+				}
+
+				psItem.executeBatch();
+				connection.commit();
+				psItem.clearBatch();
+
+				String sql3 = "UPDATE  radial_index SET finished = true WHERE id = ?";
+				psUpdate = connection.prepareStatement(sql3);
+				psUpdate.setLong(1, id);
+				psUpdate.execute();
 				connection.commit();
 
-				ResultSet rs = psIndex.getGeneratedKeys();
-
-				if (rs.next()) {
-
-					id = rs.getLong(1);
-				}
-
-				logger.info("radial_index_id:" + id);
-				logger.info(sqlDate.toString());
-				if (id != -1) {
-
-					// String sql2 = "INSERT INTO radial_"
-					// + cinrad.getHeader().getProductCode()
-					// + "(gid, radial_id, color, the_geom)VALUES (radial_"
-					// + cinrad.getHeader().getProductCode()
-					// + "_gid_seq.nextval, ?, ?, ?)";
-
-					String sql2 = "INSERT INTO radial_" + cinrad.getHeader().getProductCode()
-							+ "(radial_id, color, the_geom)VALUES ( ?, ?, ?)";
-
-					SimpleFeatureIterator iterator = cinrad.getDecoder().getFeatures().features();
-
-					psItem = connection.prepareStatement(sql2);
-					while (iterator.hasNext()) {
-						SimpleFeature f = iterator.next();
-
-						if (f.getDefaultGeometry() instanceof Polygon) {
-							psItem.setLong(1, id);
-							psItem.setInt(2, (Integer) f.getAttribute("colorIndex"));
-							Polygon[] pa = { (Polygon) f.getDefaultGeometry() };
-							// MultiPolygon multiPolygon=new MultiPolygon(pa,
-							// geoFactory);
-							psItem.setObject(3, new JtsGeometry(new MultiPolygon(pa, geoFactory)));
-							psItem.addBatch();
-
-						} else if (f.getDefaultGeometry() instanceof MultiPolygon) {
-
-							psItem.setLong(1, id);
-							psItem.setInt(2, (Integer) f.getAttribute("colorIndex"));
-							psItem.setObject(3, new JtsGeometry((MultiPolygon) f.getDefaultGeometry()));
-							psItem.addBatch();
-
-						}
-
-					}
-
-					psItem.executeBatch();
-					connection.commit();
-					psItem.clearBatch();
-
-					String sql3 = "UPDATE  radial_index SET finished = true WHERE id = ?";
-					psUpdate = connection.prepareStatement(sql3);
-					psUpdate.setLong(1, id);
-					psUpdate.execute();
-					connection.commit();
-
-				}
-			} catch (SQLException e1) {
-
-				logger.error("SQLException:", e1);
-			} finally {
-
-				// cinrad.getDecoder().getFeatures().clear();
-				cinrad = null;
-				try {
-					if (psIndex != null) {
-						psIndex.close();
-						psIndex = null;
-					}
-					if (psItem != null) {
-						psItem.close();
-						psItem = null;
-					}
-					if (psUpdate != null) {
-						psUpdate.close();
-						psUpdate = null;
-					}
-				} catch (SQLException e) {
-					logger.error("SQLException:", e);
-				}
-
 			}
-	//	}
+		} catch (SQLException e1) {
+
+			logger.error("SQLException:", e1);
+		} finally {
+
+			iterator.close();
+			cinrad.close();
+			cinrad = null;
+			try {
+				if (psIndex != null) {
+					psIndex.close();
+					psIndex = null;
+				}
+				if (psItem != null) {
+					psItem.close();
+					psItem = null;
+				}
+				if (psUpdate != null) {
+					psUpdate.close();
+					psUpdate = null;
+				}
+			} catch (SQLException e) {
+				logger.error("SQLException:", e);
+			}
+
+		}
+		// }
 
 	}
 
-	private void store48(Cinrad cinrad) {
+	private void store48(Cinrad cinrad, Connection connection) {
 
 		Date date = DateUtils.truncate(cinrad.getHeader().getScanCalendar().getTime(), Calendar.MINUTE);
 		java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
@@ -363,7 +362,7 @@ public class CinradConsumer implements Runnable {
 
 	}
 
-	private void store58(Cinrad cinrad) {
+	private void store58(Cinrad cinrad, Connection connection) {
 
 		Date date = DateUtils.truncate(cinrad.getHeader().getScanCalendar().getTime(), Calendar.MINUTE);
 		java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
@@ -441,7 +440,7 @@ public class CinradConsumer implements Runnable {
 
 	}
 
-	private void store60(Cinrad cinrad) {
+	private void store60(Cinrad cinrad, Connection connection) {
 		Date date = DateUtils.truncate(cinrad.getHeader().getScanCalendar().getTime(), Calendar.MINUTE);
 		java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
 
