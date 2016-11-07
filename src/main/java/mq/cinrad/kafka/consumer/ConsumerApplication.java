@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.config.ContainerProperties;
@@ -29,7 +28,6 @@ import org.springframework.kafka.listener.config.ContainerProperties;
 import com.google.common.collect.Queues;
 
 @SpringBootApplication
-@ComponentScan
 public class ConsumerApplication implements CommandLineRunner {
 
 	private static final Logger logger = LoggerFactory.getLogger(ConsumerApplication.class);
@@ -43,7 +41,7 @@ public class ConsumerApplication implements CommandLineRunner {
 
 	}
 
-	public ConsumerApplication(DataSource cinradDataSource, Map<String, Object> rDecodeHint) {
+	public ConsumerApplication(DataSource cinradDataSource) {
 
 		this.cinradDataSource = cinradDataSource;
 
@@ -63,7 +61,6 @@ public class ConsumerApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... arg0) throws Exception {
-		// TODO Auto-generated method stub
 
 		if (null == arg0 || arg0.length == 0 || !arg0[0].endsWith(CinradConsumerConfig.CONFIG_ENDING)) {
 			logger.error("请在第一个参数指定**cinrad.properties的完整路径");
@@ -103,18 +100,23 @@ public class ConsumerApplication implements CommandLineRunner {
 
 				listenerContainer.setupMessageListener(listener);
 
-				ExecutorService service = Executors.newFixedThreadPool(2);
-				CinradConsumer consumer1 = new CinradConsumer(recordQueue, cinradDataSource);
-				CinradConsumer consumer2 = new CinradConsumer(recordQueue, cinradDataSource);
-				service.submit(consumer1);
-				service.submit(consumer2);
+				ExecutorService service = Executors.newFixedThreadPool(3);
+
+				processExecutorService(service, 3, recordQueue, cinradDataSource);
 
 				listenerContainer.start();
 
-				// logger.error(cinradDataSource.toString());
-
 			}
 
+		}
+
+	}
+
+	private void processExecutorService(ExecutorService service, Integer size,
+			BlockingQueue<ConsumerRecord<String, String>> recordQueue, DataSource cinradDataSource) {
+		for (int i = 0; i < size; i++) {
+			CinradConsumer consumer = new CinradConsumer(recordQueue, cinradDataSource);
+			service.submit(consumer);
 		}
 
 	}

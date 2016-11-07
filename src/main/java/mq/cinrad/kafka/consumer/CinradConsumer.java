@@ -106,26 +106,24 @@ public class CinradConsumer implements Runnable {
 			case 27:
 			case 41:
 			case 46:
+			case 53:
 			case 57:
 			case 78:
 			case 79:
 			case 80:
+			case 110:
 				cinrad.decodeData();
 				storeRadial(cinrad, connection);
 				break;
-			// case 53:
-			// case 110:
-			// storeRadial(cinrad);
-			// break;
-			// case 60:
-			// store60(cinrad);
-			// break;
-			// case 58:
-			// store58(cinrad);
-			// break;
-			// case 48:
-			// store48(cinrad);
-			// break;
+			case 60:
+				store60(cinrad, connection);
+				break;
+			case 58:
+				store58(cinrad, connection);
+				break;
+			case 48:
+				store48(cinrad, connection);
+				break;
 			default:
 				break;
 			}
@@ -158,7 +156,7 @@ public class CinradConsumer implements Runnable {
 				} catch (SQLException e) {
 					logger.error(e.getMessage());
 				}
-				// connection = null;
+				
 			}
 
 		}
@@ -166,7 +164,6 @@ public class CinradConsumer implements Runnable {
 	}
 
 	private void processCinradSid(Cinrad cinrad) {
-		// TODO Auto-generated method stub
 		int sid = Utils.getSidByLonLat(new LonLat(cinrad.getHeader().getLon(), cinrad.getHeader().getLat()));
 		cinrad.getHeader().setRadarStationID(sid);
 
@@ -346,6 +343,7 @@ public class CinradConsumer implements Runnable {
 		} finally {
 
 			// cinrad.getDecoder().getFeatures().clear();
+			cinrad.close();
 			cinrad = null;
 
 			try {
@@ -424,6 +422,7 @@ public class CinradConsumer implements Runnable {
 		} finally {
 			// cinrad.getDecoder().getFeatures().clear();
 			// cinrad.getDecoder().getLineFeatures().clear();
+			cinrad.close();
 			cinrad = null;
 
 			try {
@@ -498,6 +497,7 @@ public class CinradConsumer implements Runnable {
 		} finally {
 			// cinrad.getDecoder().getFeatures().clear();
 			// cinrad.getDecoder().getLineFeatures().clear();
+			cinrad.close();
 			cinrad = null;
 
 			try {
